@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:14
+    image: postgres:latest
     container_name: postgres-db
     environment:
       POSTGRES_USER: tukanoUser
@@ -10,6 +10,13 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+  redis:
+    image: redis:latest
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
   java-app:
     build:
       context: .
@@ -17,10 +24,15 @@ services:
     container_name: java-app-container
     depends_on:
       - postgres
+      - redis
     ports:
       - "8080:8080"
     volumes:
       - java_app_data:/app/data
+    environment:
+      REDIS_HOSTNAME: redis-cache
+      REDIS_PORT: 6379
 volumes:
   postgres_data:
   java_app_data:
+  redis_data:

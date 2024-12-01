@@ -8,7 +8,6 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import utils.JSON;
-import utils.PropsEnv;
 
 public class RedisJedisPool {
 
@@ -27,11 +26,9 @@ public class RedisJedisPool {
         String RedisHostname = System.getenv("REDIS_HOSTNAME");
         int REDIS_PORT = Integer.parseInt(System.getenv("REDIS_PORT"));
         int REDIS_TIMEOUT = 2000;
-        String RedisKey = System.getenv("REDIS_KEY");
-        boolean REDIS_USE_TLS = true;
 
         poolConfig.setBlockWhenExhausted(true);
-        instance = new JedisPool(poolConfig, RedisHostname, REDIS_PORT, REDIS_TIMEOUT, RedisKey, REDIS_USE_TLS);
+        instance = new JedisPool(poolConfig, RedisHostname, REDIS_PORT, REDIS_TIMEOUT);
         return instance;
     }
 
