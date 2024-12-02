@@ -2,6 +2,8 @@ package tukano.api;
 
 import java.util.List;
 
+import jakarta.ws.rs.core.Response;
+
 public interface Users {
 	
 	String NAME = "users";
@@ -23,7 +25,7 @@ public interface Users {
 	 *         FORBIDDEN - if the password is incorrect; 
 	 *         NOT_FOUND - if no user exists with the provided userId
 	 */
-	Result<User> getUser(String userId, String pwd);
+	Response getUser(String userId, String pwd);
 
 	Result<User> getUserWithoutPwd(String userId);
 

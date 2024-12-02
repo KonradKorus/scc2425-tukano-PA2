@@ -1,10 +1,19 @@
 package tukano.impl.SQLImpl;
 
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.logging.Logger;
+
+import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.core.NewCookie;
+import jakarta.ws.rs.core.Response;
 import tukano.api.Result;
 import tukano.api.User;
 import tukano.api.Users;
 import tukano.impl.RedisJedisPool;
 import tukano.impl.Token;
+import tukano.impl.auth.Session;
 import utils.CSVLogger;
 import utils.SqlDB;
 
@@ -15,7 +24,12 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static tukano.api.Result.ErrorCode.BAD_REQUEST;
 import static tukano.api.Result.ErrorCode.FORBIDDEN;
-import static tukano.api.Result.*;
+import static tukano.api.Result.error;
+import static tukano.api.Result.errorOrResult;
+import static tukano.api.Result.errorOrValue;
+import static tukano.api.Result.ok;
+import static tukano.impl.JavaUsers.COOKIE_KEY;
+import static tukano.impl.JavaUsers.MAX_COOKIE_AGE;
 
 public class JavaUsersForSQL implements Users {
 
@@ -52,21 +66,37 @@ public class JavaUsersForSQL implements Users {
 	}
 
 	@Override
-	public Result<User> getUser(String userId, String pwd) {
-		long startTime = System.currentTimeMillis();
-		Log.info( () -> format("getUser : userId = %s, pwd = %s\n", userId, pwd));
+	public Response getUser(String userId, String pwd) {
+		boolean pwdOk = true; // ToDo replace with code to check user password
 
-		if (userId == null)
-			return error(BAD_REQUEST);
+		if (pwdOk) {
+			String uid = UUID.randomUUID().toString();
+			var cookie = new NewCookie.Builder(COOKIE_KEY)
+					.value(uid).path("/")
+					.comment("sessionid")
+					.maxAge(MAX_COOKIE_AGE)
+					.secure(false) //ideally it should be true to only work for https requests
+					.httpOnly(true)
+					.build();
 
-		User cacheUser = RedisJedisPool.getFromCache(REDIS_USERS + userId, User.class);
-		if (cacheUser != null) {
-			csvLogger.logToCSV("Get user with redis", System.currentTimeMillis() - startTime);
-			return cacheUser.getPwd().equals( pwd ) ? ok(cacheUser) : error(FORBIDDEN);
+			RedisJedisPool.addToCache(uid, new Session( uid, userId));
+
+			if (userId == null)
+				return Response.serverError().build();
+
+			User cacheUser = RedisJedisPool.getFromCache(REDIS_USERS + userId, User.class);
+			if (cacheUser != null) {
+				if (cacheUser.getPwd().equals( pwd )) {
+					return Response.ok(cacheUser).cookie(cookie).build();
+				} else {
+					return Response.serverError().build();
+				}
+			}
+			var result = validatedUserOrError(SqlDB.getOne( userId, User.class), pwd);
+			return Response.ok(result).cookie(cookie).build();
+		} else {
+			throw new NotAuthorizedException("Incorrect login");
 		}
-		var result = validatedUserOrError(SqlDB.getOne( userId, User.class), pwd);
-		csvLogger.logToCSV("Get user without redis", System.currentTimeMillis() - startTime);
-		return result ;
 	}
 
 	@Override

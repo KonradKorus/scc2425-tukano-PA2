@@ -12,6 +12,7 @@ import tukano.api.Short;
 import tukano.api.Shorts;
 import tukano.api.User;
 import tukano.db.CosmosDBLayer;
+import tukano.impl.SQLImpl.JavaUsersForSQL;
 import tukano.impl.data.Following;
 import tukano.impl.data.Likes;
 import tukano.pojoModels.CountResult;
@@ -245,7 +246,7 @@ public class JavaShorts implements Shorts {
 	}
 		
 	protected Result<User> okUser( String userId, String pwd) {
-		return JavaUsers.getInstance().getUser(userId, pwd);
+		return ok((User) JavaUsersForSQL.getInstance().getUser(userId, pwd).getEntity());
 	}
 
 	protected Result<User> okUserWithoutPwd( String userId) {

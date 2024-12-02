@@ -6,6 +6,8 @@ import java.util.Set;
 import java.util.logging.Logger;
 import jakarta.ws.rs.core.Application;
 
+import tukano.impl.auth.RequestCookiesCleanupFilter;
+import tukano.impl.auth.RequestCookiesFilter;
 import utils.IP;
 
 
@@ -42,6 +44,9 @@ public class TukanoRestServer extends Application {
 		singletons.add(new RestBlobsResource());
 		singletons.add(new RestUsersResourceForSQL());
 		singletons.add(new RestShortsResourceForSQL());
+
+		resources.add(RequestCookiesFilter.class);
+		resources.add(RequestCookiesCleanupFilter.class);
 	}
 
 	public static void main(String[] args) { }

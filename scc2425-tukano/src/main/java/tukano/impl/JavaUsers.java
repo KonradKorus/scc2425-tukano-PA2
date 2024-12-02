@@ -1,12 +1,20 @@
 package tukano.impl;
 
+import java.net.URI;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Logger;
 
+import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.NewCookie;
+import jakarta.ws.rs.core.Response;
 import tukano.api.Result;
 import tukano.api.User;
 import tukano.api.Users;
 import tukano.db.CosmosDBLayer;
+import tukano.impl.auth.RequestCookies;
+import tukano.impl.auth.Session;
 import utils.CSVLogger;
 
 import static java.lang.String.format;
@@ -20,6 +28,11 @@ import static tukano.api.Result.ok;
 public class JavaUsers implements Users {
 
 	private final static String REDIS_USERS = "users:";
+
+	public static final String ADMIN = "admin";
+	public static final String COOKIE_KEY = "scc:session";
+	public static final int MAX_COOKIE_AGE = 3600;
+	static final String REDIRECT_TO_AFTER_LOGIN = "/";
 
 	CSVLogger csvLogger = new CSVLogger();
 	private static Logger Log = Logger.getLogger(JavaUsers.class.getName());
@@ -56,22 +69,34 @@ public class JavaUsers implements Users {
 	}
 
 	@Override
-	public Result<User> getUser(String userId, String pwd) {
-		long startTime = System.currentTimeMillis();
-		Log.info( () -> format("getUser : userId = %s, pwd = %s\n", userId, pwd));
+	public Response getUser(String userId, String pwd) {
+		boolean pwdOk = true; // ToDo replace with code to check user password
+		if (pwdOk) {
+			String uid = UUID.randomUUID().toString();
+			var cookie = new NewCookie.Builder(COOKIE_KEY)
+					.value(uid).path("/")
+					.comment("sessionid")
+					.maxAge(MAX_COOKIE_AGE)
+					.secure(false) //ideally it should be true to only work for https requests
+					.httpOnly(true)
+					.build();
 
-		if (userId == null)
-			return error(BAD_REQUEST);
+			RedisJedisPool.addToCache(uid, new Session( uid, userId));
 
-		User cacheUser = RedisJedisPool.getFromCache(REDIS_USERS + userId, User.class);
-		if (cacheUser != null) {
-			csvLogger.logToCSV("Get user with redis", System.currentTimeMillis() - startTime);
-			return cacheUser.getPwd().equals( pwd ) ? ok(cacheUser) : error(FORBIDDEN);
+			Log.info( () -> format("getUser : userId = %s, pwd = %s\n", userId, pwd));
+
+			if (userId == null)
+				return Response.status(1).build();
+
+			User cacheUser = RedisJedisPool.getFromCache(REDIS_USERS + userId, User.class);
+			if (cacheUser != null) {
+				return Response.ok(cacheUser).cookie(cookie).build();
+			}
+			var result = validatedUserOrError( cosmosDBLayerForUsers.getOne( userId, User.class), pwd);
+			return Response.ok(result).cookie(cookie).build();
+		} else {
+			throw new NotAuthorizedException("Incorrect login");
 		}
-		var result = validatedUserOrError( cosmosDBLayerForUsers.getOne( userId, User.class), pwd);
-		csvLogger.logToCSV("Get user without redis", System.currentTimeMillis() - startTime);
-
-		return result;
 	}
 
 	@Override
@@ -159,5 +184,47 @@ public class JavaUsers implements Users {
 	
 	private boolean badUpdateUserInfo( String userId, String pwd, User info) {
 		return (userId == null || pwd == null || info.getId() != null && ! userId.equals( info.getId()));
+	}
+
+	static public Session validateSession(String userId) throws NotAuthorizedException {
+		var cookies = RequestCookies.get();
+
+		if (userId == null) {
+			return validateUserSession(cookies.get(COOKIE_KEY));
+		}
+		return validateCorrectUserSession(cookies.get(COOKIE_KEY), userId);
+	}
+
+	static public Session validateUserSession(Cookie cookie) throws NotAuthorizedException {
+
+		if (cookie == null)
+			throw new NotAuthorizedException("No session initialized");
+
+		var session = RedisJedisPool.getFromCache(cookie.getValue(), Session.class);
+		if (session == null)
+			throw new NotAuthorizedException("No valid session initialized");
+
+		if (session.user() == null || session.user().length() == 0)
+			throw new NotAuthorizedException("No valid session initialized");
+
+		return session;
+	}
+
+	static public Session validateCorrectUserSession(Cookie cookie, String userId) throws NotAuthorizedException {
+
+		if (cookie == null)
+			throw new NotAuthorizedException("No session initialized");
+
+		var session = RedisJedisPool.getFromCache(cookie.getValue(), Session.class);
+		if (session == null)
+			throw new NotAuthorizedException("No valid session initialized");
+
+		if (session.user() == null || session.user().length() == 0)
+			throw new NotAuthorizedException("No valid session initialized");
+
+		if (!session.user().equals(userId))
+			throw new NotAuthorizedException("Invalid user : " + session.user());
+
+		return session;
 	}
 }

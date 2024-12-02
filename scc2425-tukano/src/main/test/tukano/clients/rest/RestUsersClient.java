@@ -2,9 +2,11 @@ package tukano.clients.rest;
 
 import java.util.List;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import tukano.api.Result;
 import tukano.api.User;
 import tukano.api.Users;
@@ -16,9 +18,9 @@ public class RestUsersClient extends RestClient implements Users {
 	public RestUsersClient( String serverURI ) {
 		super( serverURI, RestUsers.PATH );
 	}
-		
+
 	private Result<String> _createUser(User user) {
-		return super.toJavaResult( 
+		return super.toJavaResult(
 			target.request()
 			.accept(MediaType.APPLICATION_JSON)
 			.post(Entity.entity(user, MediaType.APPLICATION_JSON)), String.class );
@@ -31,7 +33,7 @@ public class RestUsersClient extends RestClient implements Users {
 				.accept(MediaType.APPLICATION_JSON)
 				.get(), User.class);
 	}
-	
+
 	public Result<User> _updateUser(String userId, String password, User user) {
 		return super.toJavaResult(
 				target
@@ -67,8 +69,9 @@ public class RestUsersClient extends RestClient implements Users {
 	}
 
 	@Override
-	public Result<User> getUser(String userId, String pwd) {
-		return super.reTry( () -> _getUser(userId, pwd));
+	public Response getUser(String userId, String pwd) {
+		return null;
+//		return super.reTry( () -> _getUser(userId, pwd));
 	}
 
 	@Override

@@ -1,5 +1,6 @@
 package tukano.impl.SQLImpl;
 
+import jakarta.ws.rs.core.Response;
 import tukano.api.Short;
 import tukano.api.*;
 import tukano.impl.JavaBlobs;
@@ -164,8 +165,8 @@ public class JavaShortsForSQL implements Shorts {
 		return errorOrValue( okUser( userId, password), result );
 	}
 		
-	protected Result<User> okUser( String userId, String pwd) {
-		return JavaUsersForSQL.getInstance().getUser(userId, pwd);
+	protected Result<User> okUser(String userId, String pwd) {
+		return ok((User) JavaUsersForSQL.getInstance().getUser(userId, pwd).getEntity());
 	}
 
 	protected Result<User> okUserWithoutPwd( String userId) {
