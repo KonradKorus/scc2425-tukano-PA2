@@ -19,12 +19,6 @@ public class RestUsersResourceForSQL extends RestResource implements RestUsers {
     final Users impl;
 
     public RestUsersResourceForSQL() {
-        try {
-            Connection driver = new SQLServerDriver().connect("jdbc:sqlserver://scc2324sql71846.database.windows.net:1433;database=scc2324sql71846;user=scc2324@scc2324sql71846;password=Asdfqwerzxcv12!@;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;", null);
-        } catch (SQLServerException e) {
-            throw new RuntimeException(e);
-        }
-
         this.impl = JavaUsersForSQL.getInstance();
     }
 
