@@ -1,4 +1,4 @@
 FROM tomcat:10.0-jdk17-openjdk
 WORKDIR /usr/local/tomcat
-ADD target/TukanoBlobService-1.war webapps
+ADD target/blob-service-1.war webapps
 EXPOSE 8080

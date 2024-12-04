@@ -25,14 +25,21 @@ services:
     depends_on:
       - postgres
       - redis
+      - blob-service
     ports:
       - "8080:8080"
-    volumes:
-      - java_app_data:/app/data
     environment:
       REDIS_HOSTNAME: redis-cache
       REDIS_PORT: 6379
+  blob-service:
+    build:
+      context: ../TukanoBlobService
+      dockerfile: Dockerfile
+    container_name: blob-service-container
+    volumes:
+      - blob-service_data:/app/data
+
 volumes:
   postgres_data:
-  java_app_data:
+  blob-service_data:
   redis_data:

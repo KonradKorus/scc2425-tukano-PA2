@@ -18,9 +18,12 @@ public class JavaBlobs implements Blobs {
 
     private static Blobs instance;
     private static Logger Log = Logger.getLogger(JavaBlobs.class.getName());
+    private static final String BLOB_SERVICE_HOST = "blob-service";
+    private static final String BLOB_SERVICE_PORT = "8080";
+    private static final String BLOB_SERVICE_BASE_URL = "http://" + BLOB_SERVICE_HOST + ":" + BLOB_SERVICE_PORT;
 
+    private BlobServiceClient blobServiceClient;
     public String baseURI;
-    private BlobStorage storage;
 
     synchronized public static Blobs getInstance() {
         if (instance == null)
@@ -29,7 +32,8 @@ public class JavaBlobs implements Blobs {
     }
 
     private JavaBlobs() {
-		storage = new FilesystemStorage();
+        String BLOB_ENDPOINT = BLOB_SERVICE_BASE_URL + "/blob-service-1/rest/blobs";
+        blobServiceClient=new BlobServiceClient(BLOB_ENDPOINT);
         baseURI = String.format("%s/%s/", TukanoRestServer.serverURI, Blobs.NAME);
     }
 
@@ -37,47 +41,55 @@ public class JavaBlobs implements Blobs {
     public Result<Void> upload(String blobId, byte[] bytes, String token) {
         Log.info(() -> format("upload : blobId = %s, sha256 = %s, token = %s\n", blobId, Hex.of(Hash.sha256(bytes)), token));
 
-		if (!validBlobId(blobId, token))
-			return error(FORBIDDEN);
-
-        return storage.write(toPath(blobId), bytes);
+        try {
+            var response = blobServiceClient.upload(blobId, bytes, token);
+            System.out.println(response.statusCode());
+            System.out.println("upload javaBlobs");
+            boolean isSuccess = response.statusCode() >= 200 && response.statusCode() < 300;
+            return isSuccess ? Result.ok() : Result.error(Result.ErrorCode.INTERNAL_ERROR);
+        } catch (Exception e) {
+            Log.severe(() -> "Error uploading blob: " + e.getMessage());
+            return Result.error(Result.ErrorCode.INTERNAL_ERROR);
+        }
     }
 
     @Override
     public Result<byte[]> download(String blobId, String token) {
-        Log.info(() -> format("download : blobId = %s, token=%s\n", blobId, token));
-
-		if( ! validBlobId( blobId, token ) )
-			return error(FORBIDDEN);
-
-        return storage.read(toPath(blobId));
+        Log.info(() -> format("download : blobId = %s, token=%s", blobId, token));
+        try {
+            var response = blobServiceClient.download(blobId, token);
+            boolean isSuccess = response.statusCode() >= 200 && response.statusCode() < 300;
+            return isSuccess ? Result.ok(response.body().getBytes()) : Result.error(Result.ErrorCode.INTERNAL_ERROR);
+        } catch (Exception e) {
+            Log.severe(() -> "Error downloading blob: " + e.getMessage());
+            return Result.error(Result.ErrorCode.INTERNAL_ERROR);
+        }
     }
 
     @Override
     public Result<Void> delete(String blobId, String token) {
         Log.info(() -> format("delete : blobId = %s, token=%s\n", blobId, token));
 
-		if( ! validBlobId( blobId, token ) )
-			return error(FORBIDDEN);
-
-        return storage.delete(toPath(blobId));
+        try {
+            var response = blobServiceClient.delete(blobId, token);
+            boolean isSuccess = response.statusCode() >= 200 && response.statusCode() < 300;
+            return isSuccess ? Result.ok() : Result.error(Result.ErrorCode.INTERNAL_ERROR);
+        } catch (Exception e) {
+            Log.severe(() -> "Error deleting blob: " + e.getMessage());
+            return Result.error(Result.ErrorCode.INTERNAL_ERROR);
+        }
     }
 
     @Override
     public Result<Void> deleteAllBlobs(String userId, String token) {
         Log.info(() -> format("deleteAllBlobs : userId = %s, token=%s\n", userId, token));
-
-		if( ! Token.isValid( token, userId ) )
-			return error(FORBIDDEN);
-
-        return storage.delete(toPath(userId));
-    }
-
-    private boolean validBlobId(String blobId, String token) {
-        return Token.isValid(token, blobId);
-    }
-
-    private String toPath(String blobId) {
-        return blobId.replace("+", "/");
+        try {
+            var response = blobServiceClient.deleteAllBlobs(userId, token);
+            boolean isSuccess = response.statusCode() >= 200 && response.statusCode() < 300;
+            return isSuccess ? Result.ok() : Result.error(Result.ErrorCode.INTERNAL_ERROR);
+        } catch (Exception e) {
+            Log.severe(() -> "Error deleting blob: " + e.getMessage());
+            return Result.error(Result.ErrorCode.INTERNAL_ERROR);
+        }
     }
 }
