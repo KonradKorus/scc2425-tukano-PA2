@@ -29,7 +29,7 @@ public class JavaUsers implements Users {
 
 	private final static String REDIS_USERS = "users:";
 
-	public static final String ADMIN = "admin";
+	public static final String ADMIN = System.getenv("ADMIN_USER");
 	public static final String COOKIE_KEY = "scc:session";
 	public static final int MAX_COOKIE_AGE = 3600;
 	static final String REDIRECT_TO_AFTER_LOGIN = "/";

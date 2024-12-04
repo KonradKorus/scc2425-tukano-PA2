@@ -20,6 +20,14 @@ public class RestUsersResourceForSQL extends RestResource implements RestUsers {
 
     public RestUsersResourceForSQL() {
         this.impl = JavaUsersForSQL.getInstance();
+        createUser(
+            new User(
+                System.getenv("ADMIN_USER"),
+                System.getenv("ADMIN_PASSWORD"),
+                System.getenv("ADMIN_EMAIL"),
+                System.getenv("ADMIN_USER")
+            )
+        );
     }
 
     @Override
