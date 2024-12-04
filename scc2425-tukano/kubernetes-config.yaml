@@ -175,6 +175,45 @@ spec:
   selector:
     app: blob-service
   type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: function-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: function-service
+  template:
+    metadata:
+      labels:
+        app: function-service
+    spec:
+      containers:
+        - name: function-service
+          image: docker.io/xetyz/tukano-function-service:latest
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: function-service-data
+              mountPath: /app/data
+      volumes:
+        - name: function-service-data
+          persistentVolumeClaim:
+            claimName: function-service-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: function-service
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: function-service
+  type: ClusterIP
 
 ---
 # PersistentVolumeClaims for each service
