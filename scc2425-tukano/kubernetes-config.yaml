@@ -120,13 +120,6 @@ spec:
               value: "tukanoUser"
             - name: POSTGRES_PASSWORD
               value: "tukanoPassword"
-          volumeMounts:
-            - name: java-app-data
-              mountPath: /app/data
-      volumes:
-        - name: java-app-data
-          persistentVolumeClaim:
-            claimName: java-app-pvc
 ---
 apiVersion: v1
 kind: Service
@@ -139,6 +132,45 @@ spec:
   selector:
     app: java-app
   type: LoadBalancer #On local environment use NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blob-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blob-service
+  template:
+    metadata:
+      labels:
+        app: blob-service
+    spec:
+      containers:
+        - name: blob-service
+          image: docker.io/xetyz/tukano-blob-service:latest
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: blob-service-data
+              mountPath: /app/data
+      volumes:
+        - name: blob-service-data
+          persistentVolumeClaim:
+            claimName: blob-service-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blob-service
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: blob-service
+  type: ClusterIP
 
 ---
 # PersistentVolumeClaims for each service
@@ -167,7 +199,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: java-app-pvc
+  name: blob-service-pvc
 spec:
   accessModes:
     - ReadWriteOnce
