@@ -31,6 +31,13 @@ services:
     environment:
       REDIS_HOSTNAME: redis-cache
       REDIS_PORT: 6379
+      POSTGRES_HOSTNAME: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: tukanoDatabase
+      POSTGRES_USER: tukanoUser
+      POSTGRES_PASSWORD: tukanoPassword
+      BLOB_SERVICE_HOST: blob-service
+      BLOB_SERVICE_PORT: 8080
   blob-service:
     build:
       context: ../TukanoBlobService
