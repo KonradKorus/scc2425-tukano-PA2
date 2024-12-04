@@ -110,6 +110,10 @@ spec:
               value: "redis"
             - name: REDIS_PORT
               value: "6379"
+            - name: BLOB_SERVICE_HOST
+              value: "blob-service"
+            - name: BLOB_SERVICE_PORT
+              value: "8080"
             - name: POSTGRES_HOSTNAME
               value: "postgres"
             - name: POSTGRES_PORT

@@ -28,7 +28,7 @@ public class RedisJedisPool {
         int REDIS_TIMEOUT = 2000;
 
         poolConfig.setBlockWhenExhausted(true);
-        instance = new JedisPool(poolConfig, "redis", 6379, REDIS_TIMEOUT);
+        instance = new JedisPool(poolConfig, RedisHostname, REDIS_PORT, REDIS_TIMEOUT);
         return instance;
     }
 

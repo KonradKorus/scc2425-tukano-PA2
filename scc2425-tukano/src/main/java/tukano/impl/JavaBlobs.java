@@ -18,8 +18,8 @@ public class JavaBlobs implements Blobs {
 
     private static Blobs instance;
     private static Logger Log = Logger.getLogger(JavaBlobs.class.getName());
-    private static final String BLOB_SERVICE_HOST = "blob-service";
-    private static final String BLOB_SERVICE_PORT = "8080";
+    private static final String BLOB_SERVICE_HOST = System.getenv("BLOB_SERVICE_HOST");
+    private static final Integer BLOB_SERVICE_PORT = Integer.parseInt(System.getenv("BLOB_SERVICE_PORT"));
     private static final String BLOB_SERVICE_BASE_URL = "http://" + BLOB_SERVICE_HOST + ":" + BLOB_SERVICE_PORT;
 
     private BlobServiceClient blobServiceClient;
@@ -58,6 +58,7 @@ public class JavaBlobs implements Blobs {
         Log.info(() -> format("download : blobId = %s, token=%s", blobId, token));
         try {
             var response = blobServiceClient.download(blobId, token);
+            System.out.println(response.statusCode());
             boolean isSuccess = response.statusCode() >= 200 && response.statusCode() < 300;
             return isSuccess ? Result.ok(response.body().getBytes()) : Result.error(Result.ErrorCode.INTERNAL_ERROR);
         } catch (Exception e) {
