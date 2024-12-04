@@ -1,9 +1,5 @@
 package tukano.impl.rest;
 
-import com.microsoft.sqlserver.jdbc.SQLServerDriver;
-import com.microsoft.sqlserver.jdbc.SQLServerException;
-
-import java.sql.Connection;
 import java.util.List;
 
 import jakarta.inject.Singleton;
@@ -20,14 +16,18 @@ public class RestUsersResourceForSQL extends RestResource implements RestUsers {
 
     public RestUsersResourceForSQL() {
         this.impl = JavaUsersForSQL.getInstance();
-        createUser(
-            new User(
-                System.getenv("ADMIN_USER"),
-                System.getenv("ADMIN_PASSWORD"),
-                System.getenv("ADMIN_EMAIL"),
-                System.getenv("ADMIN_USER")
-            )
-        );
+        Response admin = getUser(System.getenv("ADMIN_USER"), System.getenv("ADMIN_PASSWORD"));
+        System.out.println(admin);
+        if (admin.getStatus() == 404) {
+            createUser(
+                    new User(
+                            System.getenv("ADMIN_USER"),
+                            System.getenv("ADMIN_PASSWORD"),
+                            System.getenv("ADMIN_EMAIL"),
+                            System.getenv("ADMIN_USER")
+                    )
+            );
+        }
     }
 
     @Override
