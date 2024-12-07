@@ -16,9 +16,9 @@ public class RestUsersResourceForSQL extends RestResource implements RestUsers {
 
     public RestUsersResourceForSQL() {
         this.impl = JavaUsersForSQL.getInstance();
-        Response admin = getUser(System.getenv("ADMIN_USER"), System.getenv("ADMIN_PASSWORD"));
-        System.out.println(admin);
-        if (admin.getStatus() == 404) {
+//        Response admin = getUser(System.getenv("ADMIN_USER"), System.getenv("ADMIN_PASSWORD"));
+//        System.out.println(admin);
+//        if (admin.getStatus() == 404) {
             createUser(
                     new User(
                             System.getenv("ADMIN_USER"),
@@ -27,7 +27,7 @@ public class RestUsersResourceForSQL extends RestResource implements RestUsers {
                             System.getenv("ADMIN_USER")
                     )
             );
-        }
+//        }
     }
 
     @Override
